@@ -16,13 +16,7 @@ var menu = [
 ];
 
 var myFileSystem = [
-    [0,0,'root'],
-    [1,0,'rtoot'],
-    [2,1,'rotot'],
-    [3,2,'roott'],
-    [4,3,'roott'],
-    [5,3,'roott'],
-    [6,0, 'name', 'ttt']
+    [0,0,'root']
     ];
 
 var currentFolder = 0;
@@ -194,18 +188,23 @@ function openFile(){
 
 function searchFile(){
     var fileName = readlineSync.question("Insert part of file/folder name or file content to look for :");
-    var weights = [];
+    var output = [];
     for(var i = 0; i < myFileSystem.length; i++){
-        weights.push(0);
-        if(myFileSystem[i][2] == fileName ) weights[i]++;
-        if(myFileSystem[i][2].includes(fileName) ) weights[i]++;
-        if(myFileSystem[i].length >3 && myFileSystem[i][2].includes(fileName) ) weights[i]++;
-        if(myFileSystem[i].length >3 && myFileSystem[i][2] == fileName ) weights[i]++;
+        var weight = 0;
+        if(myFileSystem[i][2] == fileName ) weight++;
+        if(myFileSystem[i][2].includes(fileName) ) weight++;
+        if(myFileSystem[i].length >3 && myFileSystem[i][3].includes(fileName) ) weight++;
+        if(myFileSystem[i].length >3 && myFileSystem[i][3] == fileName ) weight++;
+
+	if(weight > 0){
+	    output.push({w : weight , name : myFileSystem[i][2] });
+	}
     }
 
-
-    for(var i = 0; i < weights.length ; i++){
-        console.log(myFileSystem[i][2]);
+    output.sort(function(a,b){ a.w - b.w } );
+	
+    for(var i = 0; i < output.length ; i++){
+        console.log(output[i].name);
     }
 
 }
