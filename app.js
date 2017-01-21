@@ -54,10 +54,27 @@ function showMenu(){
 
 }
 
+function isFile(index){
+    return myFileSystem[index].length > 3 ;
+}
+
+function inCurrentFolder(index){
+    return myFileSystem[index][1] == currentFolder;
+}
+
+function isFileName(index,name){
+    return myFileSystem[index][2] == name ;
+}
+
+function getName(index){
+    return myFileSystem[index][2];
+}
+
+
 function printCurrentFolder(){
     console.log(currentFolderName);
     for(var i = 0; i < myFileSystem.length; i++){
-        if(myFileSystem[i][1] == currentFolder && myFileSystem[i][1] != myFileSystem[i][0]) // last check for root
+        if(inCurrentFolder(i) && myFileSystem[i][1] != myFileSystem[i][0]) // last check for root
             console.log("\t",myFileSystem[i][2]);
     }
 }
@@ -71,7 +88,7 @@ function changeCurrentFolder(){
                 currentFolder = myFileSystem[i][1];
                 for(var j = 0; j < myFileSystem.length; j++){
                     if(myFileSystem[j][0] == currentFolder){
-                        currentFolderName = myFileSystem[j][2];
+                        currentFolderName = getName(j);
                     }
 
                 }
@@ -80,10 +97,10 @@ function changeCurrentFolder(){
 
     }
     else {  // go to subfolder
-        for (var i = 0; i < myFileSystem.length; i++) {
-            if (myFileSystem[i][2] == folderName && myFileSystem[i][1] == currentFolder && myFileSystem[i].length < 4) {
+        for ( i = 0; i < myFileSystem.length; i++) {
+            if (isFileName(i, folderName) && inCurrentFolder(i) && !isFile(i)) {
                 currentFolder = myFileSystem[i][0];
-                currentFolderName = myFileSystem[i][2];
+                currentFolderName = getName(i);
                 break;
             }
 
@@ -96,7 +113,7 @@ function changeCurrentFolder(){
 function createFile(){
     var fileName = readlineSync.question("Insert file/folder name :");
     for(var i = 0; i < myFileSystem.length; i++){
-        if(myFileSystem[i][1] == currentFolder && myFileSystem[i][2] == fileName ){
+        if(inCurrentFolder(i) && isFileName(i, fileName )){
             console.log("File or folder with this name already existh in this folder.");
             return;
         }
@@ -119,7 +136,7 @@ function deleteFoldersList(id, list){
     for(var i = 0; i < myFileSystem.length; i++){
         if(myFileSystem[i][1] == id){
             list[i] = true;
-            if(myFileSystem[i].length < 4){
+            if(!isFile(i)){
                 deleteFoldersList(myFileSystem[i][0],list);
             }
         }
@@ -132,27 +149,28 @@ function deleteFile(){
     var folder = -1;
     var indexesToDelete = new Array(myFileSystem.length);
 
-    for(var i = 1; i < myFileSystem.length; i++){   // from 1 becouse we should not delete root
-        if(myFileSystem[i][2] == fileName){
-            if(myFileSystem[i].length < 4 ){ //this is folder
+    for(var i = 0; i < myFileSystem.length; i++){
+        if(inCurrentFolder(i) && isFileName(i, fileName)){
+            if(isFile(i) ){
+                myFileSystem.splice(i,1);
+                console.log("File ", fileName, " is deleted.");
+                return;
+
+            } else{
                 folder = myFileSystem[i][0];
                 indexesToDelete[i] = true;
                 break;
             }
-                myFileSystem.splice(i,1);
-                console.log("File ", fileName, " is deleted.");
-                return;
         }
 
     }
+
     if(folder != -1) {
         deleteFoldersList(folder,indexesToDelete);
-        var tmpSystem = [];
-        for(var i = 0; i < myFileSystem.length; i++){
-            if(indexesToDelete[i] != true)
-                tmpSystem.push(myFileSystem[i]);
+        for( i = myFileSystem.length - 1; i > 0 ; i--){   // we never ever delete root
+            if(indexesToDelete[i] == true)
+                myFileSystem.splice(i,1);
         }
-        myFileSystem = tmpSystem;
         console.log("Folder ", fileName, " is deleted.");
     }
     else{
@@ -170,12 +188,12 @@ function openFile(){
 
     for(var i = 0; i < myFileSystem.length; i++){
 
-        if(myFileSystem[i][1] != currentFolder) // only file in current folder can be shown
+        if(!inCurrentFolder(i)) // only file in current folder can be shown
             continue;
 
-        if(myFileSystem[i][2] == fileName){
-            if(myFileSystem[i].length < 4) // this is folder
-                continue;
+        if(getName(i) == fileName){
+            if(!isFile(i))
+                return;
 
             console.log("** ",myFileSystem[i][3]," **");
             return;
@@ -187,23 +205,23 @@ function openFile(){
 
 
 function searchFile(){
-    var fileName = readlineSync.question("Insert part of file/folder name or file content to look for :");
+    var filePart = readlineSync.question("Insert part of file/folder name or file content to look for :");
     var output = [];
     for(var i = 0; i < myFileSystem.length; i++){
         var weight = 0;
-        if(myFileSystem[i][2] == fileName ) weight++;
-        if(myFileSystem[i][2].includes(fileName) ) weight++;
-        if(myFileSystem[i].length >3 && myFileSystem[i][3].includes(fileName) ) weight++;
-        if(myFileSystem[i].length >3 && myFileSystem[i][3] == fileName ) weight++;
+        if(isFileName(i, filePart) ) weight++;
+        if(getName(i).includes(filePart) ) weight++;
+        if(isFile(i) && myFileSystem[i][3].includes(filePart) ) weight++;
+        if(isFile(i) && myFileSystem[i][3] == filePart ) weight++;
 
 	if(weight > 0){
 	    output.push({w : weight , name : myFileSystem[i][2] });
 	}
     }
 
-    output.sort(function(a,b){ a.w - b.w } );
+    output.sort(function(a,b){ return a.w - b.w } );
 	
-    for(var i = 0; i < output.length ; i++){
+    for( i = 0; i < output.length ; i++){
         console.log(output[i].name);
     }
 
@@ -211,11 +229,11 @@ function searchFile(){
 
 
 function quitProgram(){
-    var choice;
 
-    while(choice != 'y' && choice != 'n' ) {
-        choice = readlineSync.question("Are you sure ? [y/n] :");
-    }
+    do{
+        var choice = readlineSync.question("Are you sure ? [y/n] :");
+    } while(choice != 'y' && choice != 'n' )
+
      if(choice == 'y') {
          exit = true;
          console.log("Have a good day!");
