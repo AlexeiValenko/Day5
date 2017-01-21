@@ -207,19 +207,22 @@ function openFile(){
 function searchFile(){
     var filePart = readlineSync.question("Insert part of file/folder name or file content to look for :");
     var output = [];
-    for(var i = 0; i < myFileSystem.length; i++){
+    for(var i = 0; i < myFileSystem.length; i++) {
         var weight = 0;
-        if(isFileName(i, filePart) ) weight++;
-        if(getName(i).includes(filePart) ) weight++;
-        if(isFile(i) && myFileSystem[i][3].includes(filePart) ) weight++;
-        if(isFile(i) && myFileSystem[i][3] == filePart ) weight++;
+        if (getName(i).includes(filePart)){
+            weight += isFile(i) ? 5 : 10;
+        }  // folder should be shown first
+        if (isFileName(i, filePart)) weight++;
+        if (isFile(i) && myFileSystem[i][3].includes(filePart)) weight++;
+        if (isFile(i) && myFileSystem[i][3] == filePart) weight++;
 
-	if(weight > 0){
-	    output.push({w : weight , name : myFileSystem[i][2] });
-	}
+
+        if (weight > 0) {
+            output.push({w: weight, name: myFileSystem[i][2]});
+        }
     }
 
-    output.sort(function(a,b){ return a.w - b.w } );
+    output.sort(function(a,b){ return b.w - a.w } );
 	
     for( i = 0; i < output.length ; i++){
         console.log(output[i].name);
