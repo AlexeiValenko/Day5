@@ -84,32 +84,40 @@ function getContent(index) {
 
 function printCurrentFolder() {
     console.log(currentFolderName);
-    for(var i = 0; i < myFileSystem.length; i++) {
-        if(inCurrentFolder(i) && myFileSystem[i][1] != myFileSystem[i][0])
+    for(var i = 1; i < myFileSystem.length; i++) {  // from i== 1 for not printing root here
+        if(inCurrentFolder(i))
             console.log("\t",myFileSystem[i][2]);
     }
 }
+
+function setNewCurrentFolder(index, name) {
+    currentFolder = index;
+    if(name == undefined) {
+        for (var i = 0; i < myFileSystem.length; i++) {
+            if (myFileSystem[i][0] == currentFolder) {
+                currentFolderName = getName(i);
+            }
+        }
+    } else currentFolderName = name;
+}
+
+function isCurrentFolder(index) {
+    return myFileSystem[index][0] == currentFolder;
+}
+
 
 function changeCurrentFolder() {
     var folderName = readlineSync.question("Insert folder name or [..]  :");
 
     if(folderName == "..") { // go to father folder
         for(var i = 1; i < myFileSystem.length; i++) {
-            if(myFileSystem[i][0] == currentFolder) {
-                currentFolder = myFileSystem[i][1];
-                for(var j = 0; j < myFileSystem.length; j++) {
-                    if(myFileSystem[j][0] == currentFolder) {
-                        currentFolderName = getName(j);
-                    }
-                }
-            }
+            if(isCurrentFolder(i)) setNewCurrentFolder(myFileSystem[i][1]);
         }
 
     } else {  // go to subfolder
         for ( i = 0; i < myFileSystem.length; i++) {
             if (isFileName(i, folderName) && inCurrentFolder(i) && !isFile(i)) {
-                currentFolder = myFileSystem[i][0];
-                currentFolderName = getName(i);
+                setNewCurrentFolder(myFileSystem[i][0],getName(i));
                 break;
             }
         }
